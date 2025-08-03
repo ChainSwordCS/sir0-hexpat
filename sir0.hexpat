@@ -1,83 +1,106 @@
-// SIR0 / SIRO (Pokemon Mystery Dungeon: Gates to Infinity, specifically)
+/** SIR0 / SIRO (Pokemon Mystery Dungeon: Gates to Infinity, specifically)
+ * 
+ * see also:
+ * https://projectpokemon.org/home/docs/mystery-dungeon-nds/sir0siro-format-r46/
+ */
+
 #pragma endian little
 
 import std.mem;
 
-struct DataOffset {
-    //h
+struct sir0_header_t {
+    u32 magic; // SIR0
+    u32 content_header_addr;
+    u32 pointer_offset_list_addr;
+    u32 pad;
 };
 
-u32 magic @ 0x00; // SIR0
-u32 BASE_OFF = 0;
-u32 OFFSET1 = 4;
-u32 SEC2_OFF @ 0x04;
-u32 OFFSETS_OFF @ 0x08;
+struct content_header_t {
+    u32 entries; // idk :P
+    u32 unk; // unknown purpose
+};
 
-std::mem::Section HEADER @ 0x0;
-std::mem::Section SECTION1 @ 0x10;
-std::mem::Section SECTION2 @ SEC2_OFF;
-std::mem::Section SECTION3 @ OFFSETS_OFF;
-
-u32 sec1_cur = 0x12; // not sure
-u32 sec2_cur = SEC2_OFF+8;
-u32 sec3_cur = OFFSETS_OFF+2;
-
-// move cursor
-//$ = OFFSETS_OFF;
-//DataOffset dataOffs[while(!std::mem::eof())];
-
-//file_data[]
-
-
-
-
-u32 s = std::mem::read_unsigned(sec3_cur, 8);
-s = s & 0x7F;
-/*
-if (s & 0x80) {
-    s = s & 0x7F;
-    u32 s2 = std::mem::read_unsigned(sec3_cur+1, 8);
-    s = (s << 7) + (s2 & 0x7F);
-    if (s2 & 0x80) {
-        s2 = std::mem::read_unsigned(sec3_cur+2, 8);
-        s = (s << 7) + (s2 & 0x7F);
-        if (s2 & 0x80) {
-            s2 = std::mem::read_unsigned(sec3_cur+3, 8);
-            s = (s << 7) + (s2 & 0x7F);
+/**
+ * - s is the raw encoded byte(s). it may be a u8, u16, u24, or u32.
+ *      it's here just for reference.
+ * - offset is the decoded value. for nearly all intents and purposes,
+ *      you probably want to use offset and not s.
+ * 
+ * note: this function takes care of advancing the cursor
+ * according to how many bytes s occupies.
+ */
+struct pointer_offset_t {
+    if (std::mem::read_unsigned($, 1) < 0x80) {
+        u8 s;
+        u32 offset = s;
+    } else {
+        if (std::mem::read_unsigned($+1, 1) < 0x80) {
+            u16 s;
+            u32 offset = ((s&0x7F00)>>1) | (s&0x7F);
+        } else {
+            if (std::mem::read_unsigned($+2, 1) < 0x80) {
+                u24 s;
+                u32 offset = ((s&0x7F0000)>>2) | ((s&0x7F00)>>1) | (s&0x7F);
+            } else {
+                u32 s;
+                u32 offset = ((s&0x7F000000)>>3) | ((s&0x7F0000)>>2) | ((s&0x7F00)>>1) | (s&0x7F);
+            }
         }
     }
-}
-*/
-
-char16 file_name_3[0x15] @ sec1_cur;
-sec1_cur = sec1_cur + 0x15;
-u128 file_data_3[s] @ sec2_cur;
-sec2_cur = sec2_cur + s;
-
-
-
-
-u8 a @ OFFSETS_OFF;
-u8 b @ OFFSETS_OFF+1;
-u8 c @ OFFSETS_OFF+2;
-u8 d @ OFFSETS_OFF+3;
-u8 e @ OFFSETS_OFF+4;
-u8 z @ OFFSETS_OFF+10;
-
-struct pcap_record_t {
-    u32 ts_sec;         /* timestamp seconds */
-    u32 ts_usec;        /* timestamp microseconds */
-    u32 incl_len;       /* number of octets of packet saved in file */
-    u32 orig_len;       /* actual length of packet */
-    u8  data[incl_len];
 };
 
+sir0_header_t header @ 0x00;
+//u32 BASE_OFF = 0;
+//u32 OFFSET1 = 4;
+//u32 SEC2_OFF @ 0x04;
+//u32 OFFSETS_OFF @ 0x08;
 
-//pcap_record_t packet[while(!std::mem::eof())];
+// h
+//std::mem::Section HEADER @ 0x0;
+// h
+//std::mem::Section SECTION1 @ 0x10;
+// content header, or data at 0x10 if N/A
+//std::mem::Section SECTION2 @ header.content_header_addr;
+// Pointer Offsets List
+//std::mem::Section SECTION3 @ header.pointer_offset_list_addr;
 
+u32 sec1_cur = 0x10; // not sure
+u32 sec2_cur = header.content_header_addr;
+u32 sec3_cur = header.pointer_offset_list_addr;
 
-char16 char16_array_at_0x0C[0x2C] @ 0x0C;
-u8 u8_array_at_0x64[0x0C] @ 0x64;
-u8 u8_array_at_0x70[0x0C] @ 0x70;
-u8 u8_array_at_0x7C[0x0C] @ 0x7C;
-u8 u8_array_at_0x88[0x0C] @ 0x88;
+content_header_t content_hdr @ header.content_header_addr;
+
+$ = header.pointer_offset_list_addr;
+//pointer_offset_t ptroffs[while(!std::mem::eof())] @ $;
+pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
+
+u32 pointers[sizeof(ptr_offs)];
+u32 i = 0;
+u32 currentpos = 0;
+while (i < sizeof(ptr_offs)) {
+    currentpos = currentpos + ptr_offs[i].offset;
+    u32 ptr @ currentpos;
+    pointers[i] = ptr;
+    i = i + 1;
+}
+
+//u32 ptr0 @ 0x04;
+//u32 ptr1 @ 0x08;
+u32 ptr2 @ 0x60; // = 0x10
+u32 ptr3 @ 0x6C; // = 0x12
+u32 ptr4 @ 0x78; // = 0x24
+u32 ptr5 @ 0x84; // = 0x26
+u32 ptr6 @ 0x90; // = 0x38
+u32 ptr7 @ 0x9C; // = 0x3A
+u32 ptr8 @ 0xA8; // = 0x4C
+u32 ptr9 @ 0xB4; // = 0x4E
+//u32 ptr10 @ 0xC4; // = 0x60
+
+char16 char16_array_at_0x10[0x01] @ 0x10;
+char16 char16_array_at_0x12[0x09] @ 0x12;
+char16 char16_array_at_0x24[0x01] @ 0x24;
+char16 char16_array_at_0x26[0x09] @ 0x26;
+char16 char16_array_at_0x38[0x01] @ 0x38;
+char16 char16_array_at_0x3A[0x09] @ 0x3A;
+char16 char16_array_at_0x4C[0x01] @ 0x4C;
+char16 char16_array_at_0x4E[0x09] @ 0x4E;
