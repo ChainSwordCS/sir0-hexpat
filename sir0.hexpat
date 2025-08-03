@@ -2,6 +2,7 @@
  * 
  * see also:
  * https://projectpokemon.org/home/docs/mystery-dungeon-nds/sir0siro-format-r46/
+ * https://aluigi.altervista.org/bms/pokemon_farc.bms ( and https://aluigi.altervista.org/quickbms.htm )
  */
 
 #pragma endian little
