@@ -106,8 +106,7 @@ while (i < sizeof(ptr_offs)-1) {
 
 // move the cursor
 //$ = 0x10;
-//$ = pointers[3]; 
-$ = content_hdr.unk;
+$ = pointers[2]; 
 
 //string_auto_t strings[(sizeof(pointers)-2)] @ $;
 string_auto_t strings[content_hdr.entries] @ $;
