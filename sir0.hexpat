@@ -77,7 +77,7 @@ pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
 u32 pointers[sizeof(ptr_offs)];
 u32 i = 0;
 u32 currentpos = 0;
-while (i < sizeof(ptr_offs)) {
+while (i < sizeof(ptr_offs)-1) {
     currentpos = currentpos + ptr_offs[i].offset;
     u32 ptr @ currentpos;
     pointers[i] = ptr;
