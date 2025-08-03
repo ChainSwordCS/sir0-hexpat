@@ -49,6 +49,22 @@ struct pointer_offset_t {
     }
 };
 
+fn string_auto_func() {
+    u32 j = 0;
+    u16 a = std::mem::read_unsigned($+(j*2), 2);
+    while (a != 0x0000) {
+        j = j + 1;
+        a = std::mem::read_unsigned($+(j*2), 2);
+    }
+    return j+1;
+};
+
+struct string_auto_t {
+    char16 string[string_auto_func()];
+};
+
+
+
 sir0_header_t header @ 0x00;
 //u32 BASE_OFF = 0;
 //u32 OFFSET1 = 4;
@@ -84,6 +100,22 @@ while (i < sizeof(ptr_offs)-1) {
     i = i + 1;
 }
 
+// TODO: better handling, if needed.
+// this code assumes the strings are all back-to-back
+// in one contiguous segment.
+
+// move the cursor
+//$ = 0x10;
+//$ = pointers[3]; 
+$ = content_hdr.unk;
+
+//string_auto_t strings[(sizeof(pointers)-2)] @ $;
+string_auto_t strings[content_hdr.entries] @ $;
+
+
+
+
+/*
 //u32 ptr0 @ 0x04;
 //u32 ptr1 @ 0x08;
 u32 ptr2 @ 0x60; // = 0x10
@@ -95,12 +127,4 @@ u32 ptr7 @ 0x9C; // = 0x3A
 u32 ptr8 @ 0xA8; // = 0x4C
 u32 ptr9 @ 0xB4; // = 0x4E
 //u32 ptr10 @ 0xC4; // = 0x60
-
-char16 char16_array_at_0x10[0x01] @ 0x10;
-char16 char16_array_at_0x12[0x09] @ 0x12;
-char16 char16_array_at_0x24[0x01] @ 0x24;
-char16 char16_array_at_0x26[0x09] @ 0x26;
-char16 char16_array_at_0x38[0x01] @ 0x38;
-char16 char16_array_at_0x3A[0x09] @ 0x3A;
-char16 char16_array_at_0x4C[0x01] @ 0x4C;
-char16 char16_array_at_0x4E[0x09] @ 0x4E;
+*/
