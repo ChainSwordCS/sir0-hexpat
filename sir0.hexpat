@@ -8,6 +8,19 @@
 
 import std.mem;
 
+fn find_array_length(auto array) {
+    u32 i = 0;
+    try {
+        while (true) {
+            auto temp = array[i];
+            i = i + 1;
+        }
+    } catch {
+        
+    }
+    return i;
+};
+
 struct sir0_header_t {
     u32 magic; // SIR0
     u32 content_header_addr;
@@ -89,11 +102,12 @@ content_header_t content_hdr @ header.content_header_addr;
 $ = header.pointer_offset_list_addr;
 //pointer_offset_t ptroffs[while(!std::mem::eof())] @ $;
 pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
+u32 ptr_offs_len = find_array_length(ptr_offs);
 
-u32 pointers[sizeof(ptr_offs)];
+u32 pointers[ptr_offs_len];
 u32 i = 0;
 u32 currentpos = 0;
-while (i < sizeof(ptr_offs)-1) {
+while (i < ptr_offs_len) {
     currentpos = currentpos + ptr_offs[i].offset;
     u32 ptr @ currentpos;
     pointers[i] = ptr;
