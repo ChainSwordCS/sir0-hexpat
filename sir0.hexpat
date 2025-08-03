@@ -119,8 +119,8 @@ while (i < ptr_offs_len) {
 // in one contiguous segment.
 
 // move the cursor
-//$ = 0x10;
-$ = pointers[2]; 
+$ = 0x10;
+//$ = pointers[2];
 
 //string_auto_t strings[(sizeof(pointers)-2)] @ $;
 string_auto_t strings[content_hdr.entries] @ $;
