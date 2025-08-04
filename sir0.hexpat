@@ -7,20 +7,10 @@
 
 #pragma endian little
 
+import std.io;
 import std.mem;
+import std.string;
 
-fn find_array_length(auto array) {
-    u32 i = 0;
-    try {
-        while (true) {
-            auto temp = array[i];
-            i = i + 1;
-        }
-    } catch {
-        
-    }
-    return i;
-};
 
 struct sir0_header_t {
     u32 magic; // SIR0
@@ -29,8 +19,14 @@ struct sir0_header_t {
     u32 pad;
 };
 
+/**
+ * This struct definition is incomplete,
+ * in some cases it's fine and in some cases it's wrong.
+ * And I don't know how to tell when it's fine and when it's wrong.
+ * So currently not relying on these values to be accurate.
+ */
 struct content_header_t {
-    u32 entries; // idk :P
+    u32 entries;
     u32 unk; // unknown purpose
 };
 
@@ -49,15 +45,23 @@ struct pointer_offset_t {
         u32 offset = s;
     } else {
         if (std::mem::read_unsigned($+1, 1) < 0x80) {
+            /*  here's an alternate way to calculate offset, which is easier to understand:
+                u8 byte1 = std::mem::read_unsigned($, 1);
+                u8 byte2 = std::mem::read_unsigned($+1, 1);
+                u32 offset = ((byte1&0x7F)<<7) | (byte2&0x7F);
+                the code below is difficult to understand because s is not the endianness we want.
+            */
             u16 s;
-            u32 offset = ((s&0x7F00)>>1) | (s&0x7F);
+            u32 offset = ((s&0x007F)<<7) | ((s&0x7F00)>>8);
         } else {
             if (std::mem::read_unsigned($+2, 1) < 0x80) {
                 u24 s;
-                u32 offset = ((s&0x7F0000)>>2) | ((s&0x7F00)>>1) | (s&0x7F);
+                // hopefully this works
+                u32 offset = ((s&0x00007F)<<14) | ((s&0x007F00)>>1) | ((s&0x7F0000)>>16);
             } else {
                 u32 s;
-                u32 offset = ((s&0x7F000000)>>3) | ((s&0x7F0000)>>2) | ((s&0x7F00)>>1) | (s&0x7F);
+                // hopefully this works
+                u32 offset = ((s&0x0000007F)<<21) | ((s&0x007F0000)>>9) | ((s&0x00007F00)<<6) | ((s&0x7F000000)>>24);
             }
         }
     }
@@ -103,7 +107,19 @@ content_header_t content_hdr @ header.content_header_addr;
 $ = header.pointer_offset_list_addr;
 //pointer_offset_t ptroffs[while(!std::mem::eof())] @ $;
 pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
-u32 ptr_offs_len = find_array_length(ptr_offs);
+
+u32 ii = 0;
+try {
+    while (true) {
+        u32 temp = ptr_offs[ii].offset;
+        ii = ii + 1;
+    }
+} catch {
+    
+}
+u32 ptr_offs_len = ii;
+std::print("ptr_offs_len=");
+std::print(ptr_offs_len);
 
 u32 pointers[ptr_offs_len];
 u32 i = 0;
@@ -115,16 +131,26 @@ while (i < ptr_offs_len) {
     i = i + 1;
 }
 
-// TODO: better handling, if needed.
-// this code assumes the strings are all back-to-back
-// in one contiguous segment.
 
-// move the cursor
+
+
 $ = 0x10;
-//$ = pointers[2];
+u32 j = 2;
 
-//string_auto_t strings[(sizeof(pointers)-2)] @ $;
-string_auto_t strings[content_hdr.entries] @ $;
+struct contents_t {
+    u32 size = 0;
+    if (j < ptr_offs_len-1) {
+        size = pointers[j+1] - pointers[j];
+    } else {
+        size = std::mem::size() - pointers[j];
+    }
+    //u32 data[size/4];
+    //u8 data[size];
+    char data[size];
+    j = j + 1;
+};
+
+contents_t contents[ptr_offs_len-2] @ $;
 
 
 
