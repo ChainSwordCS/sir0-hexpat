@@ -83,6 +83,46 @@ struct string_auto_t {
     char16 string[string_auto_func()];
 };
 
+/**
+ * doesn't work... yet(TM)
+ */
+fn sort_u32_array(auto arr, u32 arr_len) {
+    u32 sorted_arr[arr_len];
+    u32 taken_indices[arr_len];
+    u32 i = 0;
+    u32 j;
+    u32 k;
+    u32 new_value;
+    u32 new_value_index;
+    while (i < arr_len) {
+        j = 0;
+        new_value = 0xFFFFFFFF;
+        new_value_index = 0xFFFFFFFF;
+        while (j < arr_len) {
+            k = 0;
+            bool istaken = false;
+            while (k < i) {
+                if (j == taken_indices[k]) {
+                   istaken = true;
+                   k = i-1;
+                }
+                k = k + 1;
+            }
+            if (!istaken) {
+                if(arr[j] <= new_value) {
+                    new_value = arr[j];
+                    new_value_index = j;
+                }
+            }
+            j = j + 1;
+        }
+        taken_indices[i] = new_value_index;
+        sorted_arr[i] = new_value;
+        i = i + 1;
+    }
+    //return;
+    return sorted_arr;
+};
 
 
 sir0_header_t header @ 0x00;
@@ -115,11 +155,66 @@ while (i < ptr_offs_len) {
     i = i + 1;
 }
 
+/*
+std::print("pointers=");
+u32 iii = 0;
+while (iii < ptr_offs_len) {
+    std::print(pointers[iii]);
+    iii = iii + 1;
+}
+*/
 
+u32 sorted_ptrs[ptr_offs_len];
+//sorted_pointers = sort_u32_array(pointers, ptr_offs_len);
+
+// not a real loop; will only run once.
+while (true) {
+    u32 taken_indices[ptr_offs_len];
+    u32 l = 0;
+    u32 j;
+    u32 k;
+    u32 new_value;
+    u32 new_value_index;
+    while (l < ptr_offs_len) {
+        j = 0;
+        new_value = 0xFFFFFFFF;
+        new_value_index = 0xFFFFFFFF;
+        while (j < ptr_offs_len) {
+            k = 0;
+            bool istaken = false;
+            while (k < l) {
+                if (j == taken_indices[k]) {
+                   istaken = true;
+                   k = l-1;
+                }
+                k = k + 1;
+            }
+            if (!istaken) {
+                if(pointers[j] <= new_value) {
+                    new_value = pointers[j];
+                    new_value_index = j;
+                }
+            }
+            j = j + 1;
+        }
+        taken_indices[l] = new_value_index;
+        sorted_ptrs[l] = new_value;
+        l = l + 1;
+    }
+    break;
+}
+
+
+std::print("sorted_pointers=");
+u32 iv = 0;
+while (iv < ptr_offs_len) {
+    std::print(sorted_ptrs[iv]);
+    iv = iv + 1;
+}
 
 
 $ = 0x10;
-u32 j = 2;
+u32 j = 0;
 
 /**
  * Note: the size/length (in bytes) of each entry is not explicitly specified.
@@ -129,18 +224,16 @@ u32 j = 2;
  * This code is basically just making an educated guess at the size of each entry.
  * It assumes that, for any given entry, it ends where the next listed entry begins
  * (which seems to hold true in all examples i've seen).
- * By extension, it also assumes the list of pointers is sorted in order.
- * So if either of those are ever not the case, the guessed size will be wrong.
  * 
- * Furthermore, an observed consequence of this is that the final entry's size
+ * An observed consequence of this is that the final entry's size
  * just extends to the end of the data.
  */
 struct content_entry_t {
     u32 size = 0;
     if (j < ptr_offs_len-1) {
-        size = pointers[j+1] - pointers[j];
+        size = sorted_ptrs[j+1] - sorted_ptrs[j];
     } else {
-        size = std::mem::size() - pointers[j];
+        size = std::mem::size() - sorted_ptrs[j];
     }
     //u32 data[size/4];
     //u8 data[size];
@@ -149,7 +242,7 @@ struct content_entry_t {
     j = j + 1;
 };
 
-content_entry_t contents[ptr_offs_len-2] @ $;
+content_entry_t contents[ptr_offs_len] @ $;
 
 /*
  *
