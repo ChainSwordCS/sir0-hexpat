@@ -2,7 +2,9 @@
  * 
  * see also:
  * https://projectpokemon.org/home/docs/mystery-dungeon-nds/sir0siro-format-r46/
+ * https://projectpokemon.org/home/docs/mystery-dungeon-3ds/fixed_pokemonbin-r18/
  * https://aluigi.altervista.org/bms/pokemon_farc.bms ( and https://aluigi.altervista.org/quickbms.htm )
+ * https://web.archive.org/web/20220115115649/http://wiki.xentax.com/index.php/MexScript
  */
 
 #pragma endian little
