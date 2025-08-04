@@ -139,7 +139,21 @@ while (i < ptr_offs_len) {
 $ = 0x10;
 u32 j = 2;
 
-struct contents_t {
+/**
+ * Note: the size/length (in bytes) of each entry is not explicitly specified.
+ * That is a fundamental shortcoming of the format. And one which makes it
+ * more awkward to decode and parse for reverse-engineering.
+ * 
+ * This code is basically just making an educated guess at the size of each entry.
+ * It assumes that, for any given entry, it ends where the next listed entry begins
+ * (which seems to hold true in all examples i've seen).
+ * By extension, it also assumes the list of pointers is sorted in order.
+ * So if either of those are ever not the case, the guessed size will be wrong.
+ * 
+ * Furthermore, an observed consequence of this is that the final entry's size
+ * just extends to the end of the data.
+ */
+struct content_entry_t {
     u32 size = 0;
     if (j < ptr_offs_len-1) {
         size = pointers[j+1] - pointers[j];
@@ -149,10 +163,11 @@ struct contents_t {
     //u32 data[size/4];
     //u8 data[size];
     char data[size];
+    //char16 data[size/2];
     j = j + 1;
 };
 
-contents_t contents[ptr_offs_len-2] @ $;
+content_entry_t contents[ptr_offs_len-2] @ $;
 
 
 
