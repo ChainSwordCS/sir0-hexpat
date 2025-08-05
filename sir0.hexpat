@@ -18,7 +18,7 @@ struct sir0_header_t {
     u32 magic; // SIR0
     u32 content_header_addr;
     u32 pointer_offset_list_addr;
-    u32 pad;
+    padding[4];
 };
 
 /**
@@ -133,17 +133,18 @@ $ = header.pointer_offset_list_addr;
 pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
 
 u32 ii = 0;
+u32 temp = 0;
 try {
     while (true) {
-        u32 temp = ptr_offs[ii].offset;
+        temp = ptr_offs[ii].offset;
         ii = ii + 1;
     }
 } catch {
     
 }
 u32 ptr_offs_len = ii;
-std::print("ptr_offs_len=");
-std::print(ptr_offs_len);
+//std::print("ptr_offs_len=");
+//std::print(ptr_offs_len);
 
 u32 pointers[ptr_offs_len];
 u32 i = 0;
