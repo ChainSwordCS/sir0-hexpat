@@ -9,6 +9,7 @@
 
 #pragma endian little
 
+import std.core;
 import std.io;
 import std.mem;
 import std.string;
@@ -83,45 +84,54 @@ struct string_auto_t {
     char16 string[string_auto_func()];
 };
 
+fn CopyArray(ref auto arrayFrom, ref auto arrayTo) {
+    u32 arrayCount = std::core::member_count(arrayTo);
+    for (u32 i = 0, i < arrayCount, i += 1) {
+        arrayTo[i] = arrayFrom[i];
+    }
+};
+
 /**
- * doesn't work... yet(TM)
+ * https://en.wikipedia.org/wiki/Merge_sort#Top-down_implementation
+ * https://en.wikipedia.org/wiki/Wikipedia:Text_of_the_Creative_Commons_Attribution-ShareAlike_4.0_International_License
+ * Adapted and slightly modified for internal use.
  */
-fn sort_u32_array(auto arr, u32 arr_len) {
-    u32 sorted_arr[arr_len];
-    u32 taken_indices[arr_len];
-    u32 i = 0;
-    u32 j;
-    u32 k;
-    u32 new_value;
-    u32 new_value_index;
-    while (i < arr_len) {
-        j = 0;
-        new_value = 0xFFFFFFFF;
-        new_value_index = 0xFFFFFFFF;
-        while (j < arr_len) {
-            k = 0;
-            bool istaken = false;
-            while (k < i) {
-                if (j == taken_indices[k]) {
-                   istaken = true;
-                   k = i-1;
-                }
-                k = k + 1;
-            }
-            if (!istaken) {
-                if(arr[j] <= new_value) {
-                    new_value = arr[j];
-                    new_value_index = j;
-                }
-            }
+fn _TopDownMerge(ref auto B, u32 iBegin, u32 iMiddle, u32 iEnd, ref auto A) {
+    u32 i = iBegin;
+    u32 j = iMiddle;
+    for (u32 k = iBegin, k < iEnd, k += 1) {
+        if (i < iMiddle && (j >= iEnd || A[i] <= A[j])) {
+            B[k] = A[i];
+            i = i + 1;
+        } else {
+            B[k] = A[j];
             j = j + 1;
         }
-        taken_indices[i] = new_value_index;
-        sorted_arr[i] = new_value;
-        i = i + 1;
     }
-    //return;
-    return sorted_arr;
+};
+/**
+ * https://en.wikipedia.org/wiki/Merge_sort#Top-down_implementation
+ * https://en.wikipedia.org/wiki/Wikipedia:Text_of_the_Creative_Commons_Attribution-ShareAlike_4.0_International_License
+ * Adapted and slightly modified for internal use.
+ */
+fn _TopDownSplitMerge(ref auto B, u32 iBegin, u32 iEnd, ref auto A) {
+    if (iEnd - iBegin <= 1) {
+        return;
+    }
+    u32 iMiddle = (iEnd + iBegin) / 2;
+    _TopDownSplitMerge(A, iBegin, iMiddle, B);
+    _TopDownSplitMerge(A, iMiddle, iEnd, B);
+    _TopDownMerge(B, iBegin, iMiddle, iEnd, A);
+};
+/**
+ * https://en.wikipedia.org/wiki/Merge_sort#Top-down_implementation
+ * https://en.wikipedia.org/wiki/Wikipedia:Text_of_the_Creative_Commons_Attribution-ShareAlike_4.0_International_License
+ * Adapted and slightly modified for internal use.
+ */
+fn TopDownMergeSort(ref auto A, ref auto B) {
+    CopyArray(A, B);
+    u32 n = std::core::member_count(B);
+    _TopDownSplitMerge(A, 0, n, B);
 };
 
 
@@ -165,43 +175,9 @@ while (iii < ptr_offs_len) {
 }
 */
 
-u32 sorted_ptrs[ptr_offs_len];
-//sorted_pointers = sort_u32_array(pointers, ptr_offs_len);
-
-// not a real loop; will only run once.
-while (true) {
-    u32 taken_indices[ptr_offs_len];
-    u32 l = 0;
-    u32 j;
-    u32 k;
-    u32 new_value;
-    u32 new_value_index;
-    while (l < ptr_offs_len) {
-        j = 0;
-        new_value = 0xFFFFFFFF;
-        new_value_index = 0xFFFFFFFF;
-        while (j < ptr_offs_len) {
-            k = 0;
-            bool istaken = false;
-            while (k < l) {
-                if (j == taken_indices[k]) {
-                   istaken = true;
-                   k = l-1;
-                }
-                k = k + 1;
-            }
-            if (!istaken) {
-                if(pointers[j] <= new_value) {
-                    new_value = pointers[j];
-                    new_value_index = j;
-                }
-            }
-            j = j + 1;
-        }
-        taken_indices[l] = new_value_index;
-        sorted_ptrs[l] = new_value;
-        l = l + 1;
-    }
+while (true) { // actually only runs once
+    u32 working_arr[ptr_offs_len];
+    TopDownMergeSort(pointers, working_arr);
     break;
 }
 
@@ -209,7 +185,7 @@ while (true) {
 std::print("sorted_pointers=");
 u32 iv = 0;
 while (iv < ptr_offs_len) {
-    std::print(sorted_ptrs[iv]);
+    std::print(pointers[iv]);
     iv = iv + 1;
 }
 
@@ -232,9 +208,9 @@ u32 j = 0;
 struct content_entry_t {
     u32 size = 0;
     if (j < ptr_offs_len-1) {
-        size = sorted_ptrs[j+1] - sorted_ptrs[j];
+        size = pointers[j+1] - pointers[j];
     } else {
-        size = std::mem::size() - sorted_ptrs[j];
+        size = std::mem::size() - pointers[j];
     }
     //u32 data[size/4];
     //u8 data[size];
