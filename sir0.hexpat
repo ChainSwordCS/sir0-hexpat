@@ -150,19 +150,7 @@ content_header_t content_hdr @ header.content_header_addr;
 $ = header.pointer_offset_list_addr;
 pointer_offset_t ptr_offs[while(std::mem::read_unsigned($, 1) != 0x00)] @ $;
 
-u32 ii = 0;
-u32 temp = 0;
-try {
-    while (true) {
-        temp = ptr_offs[ii].offset;
-        ii = ii + 1;
-    }
-} catch {
-    
-}
-u32 ptr_offs_len = ii;
-//std::print("ptr_offs_len=");
-//std::print(ptr_offs_len);
+u32 ptr_offs_len = std::core::member_count(ptr_offs);
 
 u32 pointers[ptr_offs_len];
 u32 i = 0;
@@ -189,16 +177,17 @@ while (true) { // actually only runs once
     break;
 }
 
-
+/*
 std::print("sorted_pointers=");
 u32 iv = 0;
 while (iv < ptr_offs_len) {
     std::print(pointers[iv]);
     iv = iv + 1;
 }
+*/
 
 
-$ = 0x10;
+$ = pointers[0];
 u32 j = 0;
 
 /**
