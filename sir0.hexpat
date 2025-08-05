@@ -100,9 +100,17 @@ fn _TopDownMerge(ref auto B, u32 iBegin, u32 iMiddle, u32 iEnd, ref auto A) {
     u32 i = iBegin;
     u32 j = iMiddle;
     for (u32 k = iBegin, k < iEnd, k += 1) {
-        if (i < iMiddle && (j >= iEnd || A[i] <= A[j])) {
-            B[k] = A[i];
-            i = i + 1;
+        if (i < iMiddle) {
+            if (j >= iEnd) {
+                B[k] = A[i];
+                i = i + 1;
+            } else if (A[i] <= A[j]) {
+                B[k] = A[i];
+                i = i + 1;
+            } else {
+                B[k] = A[j];
+                j = j + 1;
+            }
         } else {
             B[k] = A[j];
             j = j + 1;
